@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🦊 Kitsune Loadstring</title>
+<style>
+  :root{
+    --bg:#071018;
+    --panel:#0f1722;
+    --accent:#39e6c8;
+    --muted:#98a6b8;
+    --glass: rgba(255,255,255,0.03);
+    --danger:#ff6b6b;
+    --radius:12px;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(700px 360px at 10% 10%, rgba(57,230,200,0.04), transparent 8%),
+      radial-gradient(500px 260px at 90% 90%, rgba(57,230,200,0.02), transparent 10%),
+      linear-gradient(180deg,#061018 0%, #071018 100%);
+    color:#dbeaf0;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    padding:28px;
+  }
+
+  .wrap{
+    max-width:1120px;
+    margin:0 auto;
+    padding:22px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:14px;
+    box-shadow: 0 10px 30px rgba(1,6,12,0.7);
+    border:1px solid rgba(255,255,255,0.02);
+    display:grid;
+    grid-template-columns: 1fr 380px;
+    gap:18px;
+  }
+
+  header{
+    grid-column:1 / -1;
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .logo{
+    width:64px;height:64px;border-radius:12px;
+    background:linear-gradient(135deg,#042a2a,#06353a);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:28px;color:var(--accent);
+    box-shadow:0 6px 18px rgba(57,230,200,0.06), inset 0 -4px 18px rgba(0,0,0,0.5);
+  }
+  h1{margin:0;font-size:18px}
+  p.lead{margin:0;color:var(--muted);font-size:13px}
+
+  .editor{
+    display:flex;flex-direction:column;gap:12px;
+  }
+
+  label.small{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+  textarea#script{
+    width:100%;height:460px;padding:14px;border-radius:10px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+    color:#e6fbf6;border:1px solid rgba(255,255,255,0.03);
+    font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+    font-size:13px;resize:vertical;line-height:1.45;
+  }
+
+  .controls{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.03);
+    padding:9px 12px;border-radius:10px;color:var(--muted);
+    cursor:pointer;font-weight:600;font-size:13px;
+  }
+  .btn.primary{color:#041a16;background:linear-gradient(180deg,var(--accent),#26c9ae);box-shadow:0 6px 20px rgba(41,224,200,0.09)}
+  .btn.ghost{background:transparent;border:1px dashed rgba(255,255,255,0.03)}
+  .btn.warn{background:linear-gradient(180deg,var(--danger),#ff8a8a);color:white}
+  .panel{
+    padding:14px;border-radius:12px;background:var(--panel);border:1px solid rgba(255,255,255,0.02);
+    display:flex;flex-direction:column;gap:10px;
+  }
+
+  .right{
+    display:flex;flex-direction:column;gap:12px;
+  }
+  .small-code{
+    font-family:ui-monospace,monospace;font-size:12px;background:var(--glass);padding:10px;border-radius:8px;color:var(--accent);
+    overflow:auto;border:1px solid rgba(255,255,255,0.02);
+  }
+
+  .switch{display:flex;gap:8px;align-items:center}
+  input[type=checkbox]{transform:scale(1.05);cursor:pointer}
+
+  .output{
+    min-height:160px;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(0,0,0,0.12), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.03);overflow:auto;font-family: ui-monospace,monospace;font-size:13px;
+    color:#dffaf2;
+  }
+
+  footer{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px;padding-top:6px}
+
+  .meta{font-size:12px;color:var(--muted)}
+  .note{font-size:12px;color:var(--muted)}
+  .center{display:flex;justify-content:center;align-items:center}
+
+  @media (max-width:980px){
+    .wrap{grid-template-columns:1fr; padding:14px}
+    header{gap:10px}
+    textarea#script{height:360px}
+  }
+
+  /* modal */
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(2,6,10,0.6);display:none;align-items:center;justify-content:center;z-index:60;
+  }
+  .modal{
+    width:90%;max-width:820px;background:#08121a;border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.03);
+    box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  }
+  .modal pre{max-height:60vh;overflow:auto;padding:12px;background:transparent;border-radius:8px;font-size:13px}
+  .close-x{cursor:pointer;color:var(--muted);font-weight:700}
+</style>
+</head>
+<body>
+  <main class="wrap" role="main" aria-label="Kitsune Loadstring">
+    <header>
+      <div class="logo" aria-hidden>🦊</div>
+      <div>
+        <h1>Kitsune Loadstring</h1>
+        <p class="lead">Cole seu script Lua, obfusque/minifique e gere o <code>data:text/plain;base64,...</code> pronto para usar com <code>loadstring</code>.</p>
+      </div>
+    </header>
+
+    <section class="editor" aria-label="Editor">
+      <label class="small">Script Lua <span class="note">Cole aqui o seu script</span></label>
+      <textarea id="script" placeholder="-- Cole seu script Roblox / Lua aqui..."></textarea>
+
+      <div class="controls" role="toolbar" aria-label="Controles">
+        <button id="minifyBtn" class="btn" title="Remover comentários">Minify</button>
+        <button id="obfBtn" class="btn ghost" title="Obfuscação básica">Obfuscate</button>
+        <button id="generateBtn" class="btn primary" title="Gerar Loadstring">Gerar Kitsune Loadstring</button>
+        <button id="previewBtn" class="btn" title="Pré-visualizar RAW">Pré-visualizar RAW</button>
+        <button id="downloadBtn" class="btn" title="Baixar RAW">Baixar RAW</button>
+        <button id="clearBtn" class="btn" title="Limpar editor">Limpar</button>
+      </div>
+
+      <div class="panel" aria-label="Opções e saída">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <label class="small">Opções</label>
+          <div class="switch" title="Incluir wrapper loadstring">
+            <label style="font-size:13px;color:var(--muted)">Incluir <code>loadstring(...)</code></label>
+            <input type="checkbox" id="wrapToggle" checked aria-checked="true" />
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="copyLoad" class="btn">Copiar Loadstring</button>
+          <button id="copyBase" class="btn">Copiar Base64</button>
+          <button id="copyRaw" class="btn">Copiar RAW</button>
+        </div>
+
+        <label class="small">Gerado</label>
+        <div id="output" class="output" spellcheck="false">Nenhum Loadstring gerado ainda.</div>
+      </div>
+    </section>
+
+    <aside class="right" aria-label="Painel direito">
+      <div class="panel">
+        <label class="small">Uso (exemplo)</label>
+        <div class="small-code" id="usage"><code>-- Exemplo (Roblox)
+local code = game:HttpGet("data:text/plain;base64,BASE64_AQUI")
+local f = loadstring(code)
+f()</code></div>
+        <div style="font-size:13px;color:var(--muted)">Dica: ative/desative o wrapper para copiar apenas o data URL (RAW) ou o loadstring pronto.</div>
+      </div>
+
+      <div class="panel">
+        <label class="small">Informações</label>
+        <div class="note">• Minify: remove comentários de linha e blocos (método simples).<br>• Obfuscate: cria um payload básico + runtime decoder em Lua — obfuscação leve, não impenetrável.</div>
+      </div>
+
+      <div class="panel">
+        <label class="small">Ações rápidas</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="exampleBtn" class="btn ghost">Inserir Exemplo</button>
+          <button id="formatBtn" class="btn">Formatar</button>
+        </div>
+      </div>
+    </aside>
+
+    <footer>
+      <div class="meta">Kitsune Loadstring • Gerador offline — arquivo único</div>
+      <div class="meta">Feito para você 🦊</div>
+    </footer>
+  </main>
+
+  <!-- Modal preview -->
+  <div id="modalBg" class="modal-bg" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>Pré-visualização RAW</strong>
+        <span id="closeModal" class="close-x" title="Fechar">✕</span>
+      </div>
+      <pre id="modalPre" style="white-space:pre-wrap;"></pre>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+        <button id="modalCopy" class="btn">Copiar</button>
+        <button id="modalClose" class="btn ghost">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ====== UTILITÁRIOS ====== */
+function utf8ToBase64(str){
+  try { return btoa(unescape(encodeURIComponent(str))); } catch(e) { return btoa(str); }
+}
+function base64ToUtf8(b64){
+  try { return decodeURIComponent(escape(atob(b64))); } catch(e){ return atob(b64); }
+}
+function downloadText(filename, text){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type: 'text/plain'}));
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+/* ====== MINIFY LUA (básico) ======
+  - Remove comentários de bloco --[[...]] e comentários de linha -- ...
+  - Tenta preservar strings (simples e duplas)
+  - NÃO é um minificador completo, mas funciona para a maioria dos scripts.
+*/
+function minifyLua(src){
+  if(!src) return src;
+  let out = '';
+  let i = 0; const n = src.length;
+  let inStr = false, strChar = '', inLongComment = false;
+  while(i < n){
+    // detect long comment start
+    if(!inStr && src.startsWith('--[[', i)){
+      const j = src.indexOf(']]', i+4);
+      if(j === -1) { i = n; break; } else { i = j+2; continue; }
+    }
+    const c = src[i];
+    if(!inStr){
+      // line comment
+      if(src.startsWith('--', i)){
+        const nl = src.indexOf('\n', i+2);
+        if(nl === -1) break;
+        i = nl + 1; continue;
+      }
+      if(c === '"' || c === "'"){
+        inStr = true; strChar = c; out += c; i++; continue;
+      }
+      out += c; i++; continue;
+    } else {
+      // inside string
+      if(c === '\\' && i+1 < n){
+        out += c + src[i+1]; i += 2; continue;
+      }
+      out += c;
+      if(c === strChar){ inStr = false; strChar = ''; }
+      i++;
+    }
+  }
+  // trim trailing spaces per line
+  out = out.split('\n').map(l => l.replace(/[ \t]+$/,'')).join('\n');
+  // remove extra blank lines
+  out = out.replace(/\n{3,}/g, '\n\n').trim() + '\n';
+  return out;
+}
+
+/* ====== OBFUSCAÇÃO BÁSICA ======
+  Estratégia:
+   - Quebrar o script em pequenos blocos, inverter cada bloco, juntar e base64 encodar.
+   - Gerar um pequeno runtime Lua (decodificador) que reconstrói a string e executa com loadstring.
+  Observação: esta obfuscação é leve — é para dificultar cópia casual, não para segurança forte.
+*/
+function obfuscateLua(src){
+  if(!src) return src;
+  const chunkSize = 6 + (src.length % 7); // pseudo-random pequeno
+  const parts = [];
+  for(let i=0;i<src.length;i+=chunkSize){
+    parts.push(src.slice(i, i+chunkSize).split('').reverse().join(''));
+  }
+  const joined = parts.join('');
+  const b64 = utf8ToBase64(joined);
+  // runtime decoder em Lua: decodifica base64 e reverte cada chunk de chunkSize
+  // Observação: este runtime assume que o chunkSize é conhecido (guardado em número)
+  const lua = [
+    '-- Kitsune obfuscation runtime (gerado)',
+    'local b64 = "'+b64.replace(/"/g,'\\"') + '"',
+    'local chunk = ' + chunkSize,
+    'local b=\"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/\"',
+    'local function from_base64(s)',
+    "  s = s:gsub('[^'..b..'=]','')",
+    "  return (s:gsub('.', function(x)",
+    "      if x == '=' then return '' end",
+    "      local r,f='',(b:find(x)-1)",
+    "      for i=6,1,-1 do r = r .. ((f%2^i - f%2^(i-1) > 0) and '1' or '0') end",
+    "      return r",
+    "  end):gsub('%d%d%d%d%d%d%d%d', function(x)",
+    "      local c=0",
+    "      for i=1,8 do c=c + (x:sub(i,i)=='1' and 2^(8-i) or 0) end",
+    "      return string.char(c)",
+    "  end))",
+    "end",
+    'local joined = from_base64(b64)',
+    '-- reconstrói revertendo cada chunk invertido',
+    'local out = {}',
+    'for i=1,#joined,chunk do',
+    '  local s = joined:sub(i, i+chunk-1)',
+    '  out[#out+1] = s:reverse()',
+    'end',
+    'local src = table.concat(out)',
+    'local f,err = loadstring(src)',
+    'if not f then error("Kitsune decode failed: "..tostring(err)) end',
+    'f()'
+  ].join('\\n');
+  return lua;
+}
+
+/* ====== GERAÇÕES ====== */
+function generatePayload(opts){
+  // opts: {script: string, wrap: bool, obf: bool}
+  let src = opts.script || '';
+  if(opts.obf){
+    // gerar obfuscated lua (já inclui runtime)
+    const ob = obfuscateLua(src);
+    // ob é o código Lua com runtime -> queremos transformar em base64 e gerar data URL or wrapped loadstring
+    const b64 = utf8ToBase64(ob);
+    const dataUrl = 'data:text/plain;base64,' + b64;
+    if(opts.wrap){
+      return { raw: dataUrl, loadstring: 'loadstring(game:HttpGet("' + dataUrl + '"))' , base64: b64 };
+    } else {
+      return { raw: dataUrl, loadstring: dataUrl, base64: b64 };
+    }
+  } else {
+    // não obfuscado
+    // opcionalmente minify? o minify é uma ação separada, aqui só geramos
+    const b64 = utf8ToBase64(src);
+    const dataUrl = 'data:text/plain;base64,' + b64;
+    if(opts.wrap){
+      return { raw: dataUrl, loadstring: 'loadstring(game:HttpGet("' + dataUrl + '"))', base64: b64 };
+    } else {
+      return { raw: dataUrl, loadstring: dataUrl, base64: b64 };
+    }
+  }
+}
+
+/* ====== DOM & Eventos ====== */
+const scriptEl = document.getElementById('script');
+const minifyBtn = document.getElementById('minifyBtn');
+const obfBtn = document.getElementById('obfBtn');
+const generateBtn = document.getElementById('generateBtn');
+const outputEl = document.getElementById('output');
+const copyLoad = document.getElementById('copyLoad');
+const copyBase = document.getElementById('copyBase');
+const copyRaw = document.getElementById('copyRaw');
+const previewBtn = document.getElementById('previewBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const wrapToggle = document.getElementById('wrapToggle');
+const exampleBtn = document.getElementById('exampleBtn');
+const clearBtn = document.getElementById('clearBtn');
+const formatBtn = document.getElementById('formatBtn');
+
+let lastGenerated = { raw:'', loadstring:'', base64:'' };
+
+minifyBtn.addEventListener('click', () => {
+  const s = scriptEl.value;
+  if(!s) return alert('Cole um script primeiro.');
+  scriptEl.value = minifyLua(s);
+});
+
+obfBtn.addEventListener('click', () => {
+  const s = scriptEl.value;
+  if(!s) return alert('Cole um script primeiro.');
+  // substitui conteúdo do editor pelo código obfuscado (runtime incluido)
+  const lua = obfuscateLua(s);
+  scriptEl.value = lua;
+  alert('Obfuscação aplicada: gerado runtime decoder embutido no código.');
+});
+
+generateBtn.addEventListener('click', () => {
+  const s = scriptEl.value;
+  if(!s) return alert('Cole um script primeiro.');
+  const wrap = wrapToggle.checked;
+  // Determina se já é um runtime obf (heurística: contém "Kitsune obfuscation runtime (gerado)")
+  const isObfRuntime = /Kitsune obfuscation runtime|Kitsune obfuscation runtime/.test(s);
+  const payload = generatePayload({ script: s, wrap: wrap, obf: false });
+  // Se o usuário quer obf e o script já está no editor como runtime, tratar como obf
+  // Mas como a obfção acima substitui o editor, deixamos a opção explícita: usuário deve clicar Obfuscate antes de gerar caso queira obf.
+  lastGenerated = payload;
+  outputEl.textContent = wrap ? payload.loadstring : payload.raw;
+  outputEl.scrollTop = 0;
+});
+
+copyLoad.addEventListener('click', async () => {
+  if(!lastGenerated.loadstring) { alert('Gere o Loadstring primeiro (Gerar Kitsune Loadstring).'); return; }
+  try{ await navigator.clipboard.writeText(lastGenerated.loadstring); alert('Loadstring copiado.'); } catch(e){ prompt('Copie manualmente:', lastGenerated.loadstring); }
+});
+copyBase.addEventListener('click', async () => {
+  if(!lastGenerated.base64) { alert('Gere o Loadstring primeiro (Gerar Kitsune Loadstring).'); return; }
+  try{ await navigator.clipboard.writeText(lastGenerated.base64); alert('Base64 copiado.'); } catch(e){ prompt('Base64:', lastGenerated.base64); }
+});
+copyRaw.addEventListener('click', async () => {
+  if(!lastGenerated.raw) { alert('Gere o Loadstring primeiro (Gerar Kitsune Loadstring).'); return; }
+  try{ await navigator.clipboard.writeText(lastGenerated.raw); alert('RAW copiado.'); } catch(e){ prompt('RAW:', lastGenerated.raw); }
+});
+
+previewBtn.addEventListener('click', () => {
+  if(!lastGenerated.raw) { alert('Gere o Loadstring primeiro (Gerar Kitsune Loadstring).'); return; }
+  const modalBg = document.getElementById('modalBg');
+  const modalPre = document.getElementById('modalPre');
+  modalPre.textContent = lastGenerated.raw;
+  modalBg.style.display = 'flex';
+  modalBg.setAttribute('aria-hidden','false');
+});
+downloadBtn.addEventListener('click', () => {
+  if(!lastGenerated.raw) { alert('Gere o Loadstring primeiro (Gerar Kitsune Loadstring).'); return; }
+  // Baixar RAW (data URL) como .txt contendo a URL ou como o conteúdo (base64 decodificado)? Vamos salvar o RAW (data URL)
+  downloadText('kitsune_loadstring_raw.txt', lastGenerated.raw);
+});
+
+exampleBtn.addEventListener('click', () => {
+  const example = `-- Exemplo: print e wait (Roblox)
+for i=1,5 do
+  print("Kitsune: linha "..i)
+  wait(0.2)
+end
+`;
+  scriptEl.value = example;
+});
+
+clearBtn.addEventListener('click', () => {
+  if(confirm('Limpar o editor?')) scriptEl.value = '';
+});
+
+formatBtn.addEventListener('click', () => {
+  // Apenas um "format" simples: trim e garantir nova linha no fim
+  let s = scriptEl.value;
+  if(!s) return;
+  s = s.replace(/\t/g,'  ');
+  s = s.replace(/[ \t]+\n/g,'\n');
+  s = s.replace(/\n{3,}/g,'\n\n').trim() + '\n';
+  scriptEl.value = s;
+  alert('Formatado (básico).');
+});
+
+/* Modal controls */
+document.getElementById('closeModal').addEventListener('click', closeModal);
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modalCopy').addEventListener('click', async () => {
+  try{ await navigator.clipboard.writeText(document.getElementById('modalPre').textContent); alert('Copiado.'); } catch(e){ prompt('Copie manualmente:', document.getElementById('modalPre').textContent); }
+});
+document.getElementById('modalBg').addEventListener('click', function(e){
+  if(e.target === this) closeModal();
+});
+function closeModal(){
+  const modalBg = document.getElementById('modalBg');
+  modalBg.style.display = 'none';
+  modalBg.setAttribute('aria-hidden','true');
+}
+
+/* Inicial */
+outputEl.textContent = 'Nenhum Loadstring gerado ainda.\nCole um script e clique em "Gerar Kitsune Loadstring".\nDica: clique em "Obfuscate" antes de gerar para embutir runtime obfuscado.';
+</script>
+</body>
+</html>
